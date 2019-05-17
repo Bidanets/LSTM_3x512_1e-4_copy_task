@@ -1,0 +1,64 @@
+# -*- coding: utf-8 -*-
+
+from controller_implementations.dnc.dnc import *
+from controller_implementations.feedforward import *
+from controller_implementations.lstm import *
+
+from task_implementations.copy_task import *
+from task_implementations.bAbI.bAbI import *
+from utils import project_path, init_wrapper
+
+weight_initializer = init_wrapper(tf.random_normal)
+
+n_blocks = 7               # количество битов в маске
+vector_size = n_blocks + 1 # + 1 служебный (разделительный) бит (для обозначения начала и конца последовательности масок)
+min_seq = 1                # минимальная длина последовательности битовых векторов
+train_max_seq = 20         # максимальная длина последовательности битовых векторов
+n_copies = 1
+out_vector_size = vector_size
+
+# ------------------------------------------------------------------------
+Number_of_test_obj_by_each_length_of_binary_vectors_secuence = 100
+N = Number_of_test_obj_by_each_length_of_binary_vectors_secuence
+# ------------------------------------------------------------------------
+
+# два разных экземпляра task для того, чтобы уметь обучать и тренировать на последовательностях разной длины
+task_for_training = CopyTask(vector_size, min_seq, train_max_seq, n_copies)
+task_for_testing = CopyTask(vector_size, 10, 10, n_copies)
+
+# task = bAbITask(os.path.join("tasks_1-20_v1-2", "en-10k"))
+
+print("Loaded task")
+
+class Hp:
+    """
+    Hyperparameters
+    """
+    batch_size = 1
+    steps = 1000000
+
+    lstm_memory_size = 100
+    n_layers = 1
+
+    stddev = 0.1
+
+    class Mem:
+        word_size = 8   
+        mem_size = 10
+        num_read_heads = 1
+
+print("task.vector_size: ", task_for_training.vector_size)
+
+#controller = Feedforward(task.vector_size, Hp.batch_size, [3, 3])
+
+controller = LSTM(task_for_training.vector_size, Hp.lstm_memory_size, Hp.n_layers, initializer = weight_initializer, initial_stddev = Hp.stddev)
+
+# out_vector_size = task.vector_size is a needed argument to LSTM if you want to test just the LSTM outside of DNC
+
+dnc = DNC(controller, Hp.batch_size, task_for_training.vector_size, Hp.Mem, initializer = weight_initializer, initial_stddev = Hp.stddev)
+
+print("Loaded controller")
+
+#restore_path = os.path.join(project_path.log_dir, "June_09__19:32", "train", "model.chpt")
+
+dnc.run_session(task_for_training, task_for_testing, Number_of_test_obj_by_each_length_of_binary_vectors_secuence, Hp, project_path)  # , restore_path = restore_path)

@@ -1,0 +1,2 @@
+model_checkpoint_path: "/Users/bidanecaleksandrvladimirovic/Documents/ANNs/dnc/copy_task/LSTM_without_print_and_tensorboard/log/May_16__07:39/train/model.chpt"
+all_model_checkpoint_paths: "/Users/bidanecaleksandrvladimirovic/Documents/ANNs/dnc/copy_task/LSTM_without_print_and_tensorboard/log/May_16__07:39/train/model.chpt"
